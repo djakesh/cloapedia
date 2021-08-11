@@ -51,3 +51,21 @@ class Post(models.Model):
         return self.title
 
 
+class Comment(models.Model):
+    post = models.ForeignKey(Post, on_delete=models.CASCADE,
+                             related_name='comments')
+    comment = models.ForeignKey('self', on_delete=models.CASCADE,
+                                related_name='comments_comments')
+    name = models.CharField(max_length=50)
+    text = models.TextField()
+    date_created = models.DateTimeField(auto_now_add=True)
+
+
+class Rating(models.Model):
+    post = models.ForeignKey(Post, on_delete=models.CASCADE,
+                             related_name='post_ratings')
+    profile = models.ForeignKey(Profile, on_delete=models.CASCADE,
+                                related_name='profile_ratings')
+    rate = models.PositiveIntegerField()
+    rated = models.BooleanField(default=False)
+

@@ -12,23 +12,22 @@
         <div class="row">
             <div class="col-lg-8 col-md-8 col-sm-12 col-xs-12">
                 <h2>{{ category.title }}</h2>
-            </div><!-- end col -->
+            </div>
             <div class="col-lg-4 col-md-4 col-sm-12 hidden-xs-down hidden-sm-down">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a href="{% url 'main_page' %}">Home</a></li>
                     <li class="breadcrumb-item active">{{ category.title }}</li>
                 </ol>
-            </div><!-- end col -->
-        </div><!-- end row -->
-    </div><!-- end container -->
-</div><!-- end page-title -->
+            </div>
+        </div>
+    </div>
+</div>
 
 <section class="section wb">
     <div class="container">
         <div class="row">
             <div class="col-lg-9 col-md-12 col-sm-12 col-xs-12">
                 <div class="page-wrapper">
-
                     <div class="blog-grid-system">
                         <div class="row">
                             {% for post in posts %}
@@ -41,14 +40,14 @@
                                             {% endif %}
                                             <div class="hovereffect">
                                                 <span></span>
-                                            </div><!-- end hover -->
+                                            </div>
                                         </a>
-                                    </div><!-- end media -->
+                                    </div>
                                     <div class="blog-meta big-meta">
                                         <h4><a href="{% url 'post_detail' post.id %}">{{ post.title }}</a></h4>
                                         <p>{{ post.post|truncatechars:250 }}</p>
                                         <small><a href="{% url 'category_details' category.id %}">{{ category.title }}</a></small>
-                                        <small><a href="{% url 'post_detail' post.id %}">{{ post.date_created|date:"d M Y" }}</a></small>
+                                        <small><a href="{% url 'post_detail' post.id %}">{{ post.date_created|date:"d M, Y" }}</a></small>
                                         <small><a href="#">by {{ post.author.username }}</a></small>
                                     </div><!-- end meta -->
                                 </div><!-- end blog-box -->
@@ -60,20 +59,27 @@
 
                 <hr class="invis3">
 
-                <div class="row">
-                    <div class="col-md-12">
-                        <nav aria-label="Page navigation">
-                            <ul class="pagination justify-content-start">
-                                <li class="page-item"><a class="page-link" href="#">1</a></li>
-                                <li class="page-item"><a class="page-link" href="#">2</a></li>
-                                <li class="page-item"><a class="page-link" href="#">3</a></li>
-                                <li class="page-item">
-                                    <a class="page-link" href="#">Next</a>
+                <div class="pagination">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <nav aria-label="Page navigation">
+                                <ul class="pagination justify-content-start">
+                                {% if posts.has_previous %}
+                                    <li class="page-item"><a class="page-link" href="?page=1">&laquo; first</a></li>
+                                    <li class="page-item"><a class="page-link" href="?page={{ posts.previous_page_number }}">previous</a></li>
+                                {% endif %}
+                                <li class="page-item page-link">
+                                Page {{ posts.number }} of {{ posts.paginator.num_pages }}.
                                 </li>
-                            </ul>
-                        </nav>
-                    </div><!-- end col -->
-                </div><!-- end row -->
+                                {% if posts.has_next %}
+                                    <li class="page-item"><a class="page-link" href="?page={{ posts.next_page_number }}">next</a></li>
+                                    <li class="page-item"><a class="page-link" href="?page={{ posts.paginator.num_pages }}">last &raquo;</a></li>
+                                {% endif %}
+                                </ul>
+                            </nav>
+                        </div><!-- end col -->
+                    </div><!-- end row -->
+                </div>
             </div><!-- end col -->
 
             <div class="col-lg-3 col-md-12 col-sm-12 col-xs-12">

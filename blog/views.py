@@ -1,9 +1,14 @@
+
+from functools import reduce
+
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import AnonymousUser
+from django.core.paginator import Paginator
 from django.shortcuts import render, redirect
 
-from blog.forms import PostCreateForm, PostUpdateForm
-from blog.models import Post, Category
+from blog.forms import PostCreateForm, PostUpdateForm, CommentForm
+from blog.models import Post, Category, Rating
 
 
 def main_page(request):
@@ -34,15 +39,21 @@ def create_post(request):
 @login_required
 def my_posts(request):
     posts = Post.objects.filter(author=request.user)
+    paginator = Paginator(posts, 2)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
     return render(request, 'blog/user_posts.html',
-                  context={'posts': posts})
+                  context={'posts': page_obj})
 
 
 def category_posts(request, pk):
     category = Category.objects.filter(id=pk).first()
     posts = Post.objects.filter(category=category, published=True)
+    paginator = Paginator(posts, 2)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
     return render(request, 'blog/category_posts.html',
-                  context={'category': category, 'posts': posts})
+                  context={'category': category, 'posts': page_obj})
 
 
 def search(request):
@@ -53,6 +64,7 @@ def search(request):
 
 
 def post_detail(request, pk):
+    global form
     post = Post.objects.filter(id=pk).first()
 
     not_anonymous = not (isinstance(request.user, AnonymousUser))
@@ -62,11 +74,25 @@ def post_detail(request, pk):
         post.seen_amount += 1
         post.save()
 
-    if request.user == post.author:
-        author = True
 
-    return render(request, 'blog/post_detail.html',
-                  context={'post': post, 'author': author})
+        if request.user == post.author:
+            author = True
+
+        if request.method == 'POST':
+            form = CommentForm(request.POST)
+
+        if form.is_valid():
+            comment = form.save(commit=False)
+            comment.post = post
+            comment.save()
+
+    form = CommentForm()
+    context = {
+        'post': post,
+        'author': author,
+        'form': form
+    }
+    return render(request, 'blog/post_detail.html', context)
 
 
 def post_update(request, pk):
@@ -84,3 +110,32 @@ def post_delete(request, pk):
     post = Post.objects.filter(id=pk).first()
     post.delete()
     return redirect('my_posts')
+
+
+def rate_post(request, pk, rate):
+    post = Post.objects.filter(id=pk).first()
+
+    not_anonymous = not (isinstance(request.user, AnonymousUser))
+    try:
+        rated_before = Rating.objects.filter(profile=request.user).first()
+    except TypeError:
+        messages.error(request, 'You cannot rate. Login first')
+        return redirect('main_page')
+
+    if request.user and not_anonymous and not rated_before:
+        messages.success(request, 'Your rating has been saved')
+        rating = Rating(
+            post=post, profile=request.user,
+            rate=rate, rated=True
+        )
+        rating.save()
+    else:
+        messages.error(request, 'You have already rated before')
+        return redirect('main_page')
+
+    rates = Rating.objects.filter(post=post)
+
+    stars = reduce(lambda x, y: x + y, [i.rate for i in rates])
+    post.rating = stars/len(rates)
+    post.save()
+    return redirect('main_page')
